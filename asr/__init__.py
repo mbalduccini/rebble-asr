@@ -53,12 +53,24 @@ def heartbeat():
 def recognise():
     stream = request.stream
 
-    access_token, part1, part2 = request.host.split('.', 1)[0].split('-', 3)
-    lang = f"{part1}-{part2.upper()}"
 
-    auth_req = requests.get(f"{AUTH_URL}/api/v1/me/token", headers={'Authorization': f"Bearer {access_token}"})
-    if not auth_req.ok:
-        abort(401)
+    # sample request host
+    #     <token>-en-us.asr.rebble.io
+    with open('/tmp/zzz.txt','a') as fp:
+        fp.write('REQUEST='+request.host+'\n')
+
+    # extraction of Rebble token disabled
+    #access_token, part1, part2 = request.host.split('.', 1)[0].split('-', 3)
+    part1='en'
+    part2='us'
+    lang = f"{part1}-{part2.upper()}"
+    with open('/tmp/zzz.txt','a') as fp:
+        fp.write('LANG='+lang+'\n')
+
+    # Rebble auth disabled
+    #auth_req = requests.get(f"{AUTH_URL}/api/v1/me/token", headers={'Authorization': f"Bearer {access_token}"})
+    #if not auth_req.ok:
+    #    abort(401)
 
     chunks = iter(list(parse_chunks(stream)))
     content = next(chunks).decode('utf-8')
