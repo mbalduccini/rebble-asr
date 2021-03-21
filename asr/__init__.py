@@ -16,6 +16,7 @@ app = Flask(__name__)
 
 AUTH_URL = "https://auth.rebble.io"
 API_KEY = os.environ['SPEECH_API_KEY']
+REFERER = os.environ['MY_HTTP_REFERER']
 
 
 # We know gunicorn does this, but it doesn't *say* it does this, so we must signal it manually.
@@ -91,7 +92,7 @@ def recognise():
             'content': base64.b64encode(b''.join((struct.pack('B', len(x)) + x for x in chunks))).decode('utf-8'),
         },
     }
-    result = requests.post(f'https://speech.googleapis.com/v1/speech:recognize?key={API_KEY}', json=body)
+    result = requests.post(f'https://speech.googleapis.com/v1/speech:recognize?key={API_KEY}', json=body, headers={'referer': REFERER})
     result.raise_for_status()
 
     words = []
