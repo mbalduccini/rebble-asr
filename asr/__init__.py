@@ -14,9 +14,20 @@ from flask import Flask, request, Response, abort
 
 app = Flask(__name__)
 
+DEBUG=False
+DEBUG_FILE='/tmp/asr.log'
+
 AUTH_URL = "https://auth.rebble.io"
 API_KEY = os.environ['SPEECH_API_KEY']
 REFERER = os.environ['MY_HTTP_REFERER']
+if 'ALLOWED_PHONES' in os.environ:
+    ALLOWED = os.environ['ALLOWED_PHONES']
+    if ALLOWED=="":
+        ALLOWED=[]
+    else:
+        ALLOWED=ALLOWED.split(',')
+else:
+    ALLOWED=[]
 
 
 # We know gunicorn does this, but it doesn't *say* it does this, so we must signal it manually.
@@ -57,16 +68,38 @@ def recognise():
 
     # sample request host
     #     <token>-en-us.asr.rebble.io
-    with open('/tmp/zzz.txt','a') as fp:
-        fp.write('REQUEST='+request.host+'\n')
 
+    if DEBUG:
+        with open(DEBUG_FILE,'a') as fp:
+            fp.write('REQUEST='+request.host+'\n')
+            for key, value in request.headers:
+                fp.write('HEADER: '+key+','+value+'\n')
+            fp.write('===============\n')
+
+    if ALLOWED!=[]:
+        agent=request.headers['User-Agent']
+        found=False
+        for phone in ALLOWED:
+            if phone in agent:
+                found=True
+                if DEBUG:
+                    with open(DEBUG_FILE,'a') as fp:
+                        fp.write('found phone '+phone+' in '+agent+'\n')
+                break
+        if not found:
+            if DEBUG:
+                with open(DEBUG_FILE,'a') as fp:
+                    fp.write('No allowed phones found in '+agent+'\n')
+            abort(401)
+    
     # extraction of Rebble token disabled
     #access_token, part1, part2 = request.host.split('.', 1)[0].split('-', 3)
     part1='en'
     part2='us'
     lang = f"{part1}-{part2.upper()}"
-    with open('/tmp/zzz.txt','a') as fp:
-        fp.write('LANG='+lang+'\n')
+    if DEBUG:
+        with open(DEBUG_FILE,'a') as fp:
+            fp.write('LANG='+lang+'\n')
 
     # Rebble auth disabled
     #auth_req = requests.get(f"{AUTH_URL}/api/v1/me/token", headers={'Authorization': f"Bearer {access_token}"})
